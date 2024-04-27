@@ -1,0 +1,111 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct {
+    int length;
+    char description[100]; // Assuming a maximum description length of 100 characters
+} PrintJob;
+
+
+typedef struct {
+    PrintJob **heap;
+    int size;
+    int capacity;
+} PrinterQueue;
+
+
+PrinterQueue* createPrinterQueue(int capacity) {
+    PrinterQueue* queue = (PrinterQueue*)malloc(sizeof(PrinterQueue));
+    queue->heap = (PrintJob*)malloc(capacity * sizeof(PrintJob));
+    queue->size = 0;
+    queue->capacity = capacity;
+    return queue;
+}
+
+
+void swap(PrintJob** a, PrintJob** b) {
+    PrintJob* temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+
+void enqueue(PrinterQueue* queue, PrintJob* job) {
+    if (queue->size == queue->capacity) {
+        printf("Printer queue is full!\n");
+        return;
+    }
+
+ 
+    queue->heap[queue->size] = job;
+    int index = queue->size;
+    queue->size++;
+
+ 
+    while (index > 0 && queue->heap[index]->length < queue->heap[(index - 1) / 2]->length) {
+        swap(&queue->heap[index], &queue->heap[(index - 1) / 2]);
+        index = (index - 1) / 2;
+    }
+}
+
+
+PrintJob* dequeue(PrinterQueue* queue) {
+    if (queue->size == 0) {
+        printf("Printer queue is empty!\n");
+        return NULL;
+    }
+
+    
+    PrintJob* job = queue->heap[0];
+    queue->heap[0] = queue->heap[queue->size - 1];
+    queue->size--;
+
+   
+    int index = 0;
+    while (2 * index + 1 < queue->size) {
+        int leftChild = 2 * index + 1;
+        int rightChild = 2 * index + 2;
+        int smallerChild = leftChild;
+
+        if (rightChild < queue->size && queue->heap[rightChild]->length < queue->heap[leftChild]->length) {
+            smallerChild = rightChild;
+        }
+
+        if (queue->heap[index]->length <= queue->heap[smallerChild]->length) {
+            break;
+        }
+
+        swap(&queue->heap[index], &queue->heap[smallerChild]);
+        index = smallerChild;
+    }
+
+    return job;
+}
+
+
+void printJob(PrintJob* job) {
+    printf("Printing: %s\n", job->description);
+}
+
+int main() {
+    
+    PrinterQueue* queue = createPrinterQueue(10);
+
+
+    enqueue(queue, &(PrintJob){5, "Document A"});
+    enqueue(queue, &(PrintJob){3, "Document B"});
+    enqueue(queue, &(PrintJob){7, "Document C"});
+    enqueue(queue, &(PrintJob){2, "Document D"});
+
+    
+    while (queue->size > 0) {
+        PrintJob* job = dequeue(queue);
+        printJob(job);
+    }
+
+   
+    free(queue->heap);
+    free(queue);
+
+    return 0;
+}
